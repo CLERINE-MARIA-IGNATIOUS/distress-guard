@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scream Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 800px;
+            width: 80%;
+            height: 100%;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            overflow-y: auto;
+        }
+
+        .radar {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 700px;
+            height: 400px;
+            background-image: url('audios/3.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #000;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .red-circle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            animation: blink 1s infinite alternate;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .play-button {
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin-left: 10px;
+        }
+
+        .play-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="radar">
+        <div id="redCircle" class="red-circle" style="display: none;"></div>
+    </div>
+    <div class="container">
+        <h1>Scream Detection</h1>
+        <div id="messages"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            console.log('Connected');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected');
+        });
+
+        socket.on('scream_detected', function(data) {
+            handleDetection('Scream', data);
+        });
+
+        socket.on('help_detected', function(data) {
+            handleDetection('Help request', data);
+        });
+
+        function handleDetection(type, data) {
+            // Show the red circle at the specified coordinates for 5 seconds
+            var redCircle = document.getElementById('redCircle');
+            redCircle.style.display = 'block';
+            redCircle.style.top = data.y + 'px';
+            redCircle.style.left = data.x + 'px';
+
+            setTimeout(function() {
+                redCircle.style.display = 'none';
+            }, 9000); // Hide the red circle after 9 seconds
+
+            var messageDiv = document.getElementById('messages');
+            var message = document.createElement('div');
+            message.classList.add('message');
+            message.textContent = type + " detected from " + data.client_name + " at " + data.time;
+
+            var playButton = document.createElement('button');
+            playButton.classList.add('play-button');
+            playButton.textContent = 'Play Audio';
+
+            playButton.addEventListener('click', function() {
+                var audioPlayer = new Audio(data.audioURL);
+                audioPlayer.play();
+            });
+
+            message.appendChild(playButton);
+            messageDiv.appendChild(message);
+        }
+    </script>
+</body>
+</html>
